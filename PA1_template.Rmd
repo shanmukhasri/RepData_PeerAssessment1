@@ -1,25 +1,264 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+Reproducible Research: Peer Assessment 1
+K.S.S Siva Teja
+========================================================
+10-06-2017
+
+# Introduction
+
+With the advancement of technology and the growth of the **big data** movement, it is now possible to collect a large amount of data about personal movement using activity monitoring devices.  Such examples are: [Fitbit](http://www.fitbit.com/), [Nike Fuelband](http://www.nike.com/us/en_us/c/nikeplus-fuelband), or [Jawbone Up](https://jawbone.com/up). These kinds of devices are part of the "quantified self" movement: those who  measurements about themselves on a regular basis in order to improve their health,  find patterns in their behaviour, or because they are simply technology geeks. However, these data remain severely underused due to the fact that the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals throughout the day. The data consists of two months of data from an anonymous individual collected during the months of October and November 2012 and include the number of steps taken in 5 minute intervals each day.
+
+The overall goal of this assignment is to make some basic exploratory data analysis to assess some activity patterns with regards to the anonymous individual's walking patterns.  For each day, there are readings taken at particular 5-minute intervals.  These readings correspond to the number of **steps** taken by the anonymous individual between the previous 5-minute interval to the current 5-minute interval.
+
+# variables included in the dataset
+steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+date: The date on which the measurement was taken in YYYY-MM-DD format
+interval: Identifier for the 5-minute interval in which measurement was taken
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+# Procedure
+
+## Preamble
+
+there are five questions answered in this analysis:
+
+1.  Loading in and preprocessing the data
+2.  What is mean total number of steps taken per day?(with a histogram)
+3.  What is the average daily activity pattern?
+4.  Imputing missing values
+5.  Are there differences in activity patterns between weekdays and weekends?
+
+## Loading in and preprocessing data
+
+please change the directory to mydocuments for reading the file
+
+The first thing we obviously need to do is read in the data and clean it up so that it is presentable for analysis.
+there are to things that to be done for this data
+1.convert the dates into a `POSIXlt` class for easier processing.
+2.read the data in using `read.csv()`.
+3.After, the dates will be transformed into the `POSIXlt` class.
+
+```{r cache=TRUE}
+dat <- read.csv('C:/Users/shanmukhasri/Documents/activity.csv') # Reading file from directory
+
+# Dates are in YYYY-MM-DD format
+dates <- strptime(dat$date, "%Y-%m-%d")
+dat$date <- dates #getting dates
+
+# making a list of all possible dates
+uniqueDates <- unique(dates)
+# making a list of all possible intervals
+uniqueIntervals <- unique(dat$interval)
+```
+
+As for `uniqueDates` and `uniqueIntervals`, these are variables that store a list of all possible dates and intervals.
+
+## What is the mean total number of steps taken per day?
+
+plotting a histogram of the total number of steps taken for each day. 
+steps for plotting histogram
+1.split up the data into individual data frames where each data frame represents the data for a particular day.
+2.create a vector that accumulates all of the steps taken for each day and let it get stored into a vector(It should be noted that `NA` values will be ignored for the time being.)
+3.plot a histogram where the x-axis represents the particular day in question, while the y-axis denotes how many steps were taken in total for each day
 
 
-## Loading and preprocessing the data
+```{r cache=TRUE, fig.width=11, fig.height=6}
+# Code for crweating a histogram of the total number of steps taken each da
+# split up the data into individual data frames
+stepsSplit <- split(dat$steps, dates$yday)
 
+# finding total number of steps each day
+totalStepsPerDay <- sapply(stepsSplit, sum, na.rm=TRUE)
 
+# x-axis denotes the day
+# y-axis denotes the total number of steps taken 
+# for each day
+plot(uniqueDates, totalStepsPerDay, main="Histogram of steps taken each day", 
+     xlab="Date (October to November 2012)", ylab="Frequency", type="h", lwd=4, col="blue")
+```
 
-## What is mean total number of steps taken per day?
+The mean steps per each day are:
 
+```{r cache=TRUE}
+meanStepsPerDay <- sapply(stepsSplit, mean, na.rm=TRUE)
+meanDataFrame <- data.frame(date=uniqueDates, meanStepsPerDay=meanStepsPerDay, row.names=NULL)
+meanDataFrame
+```
+
+The median steps per each day are:
+```{r cache=TRUE}
+medianStepsPerDay <- sapply(stepsSplit, median, na.rm=TRUE)
+medianDataFrame <- data.frame(date=uniqueDates, medianStepsPerDay=medianStepsPerDay, row.names=NULL)
+medianDataFrame
+```
 
 
 ## What is the average daily activity pattern?
 
+first we have to split up this data again so that individual data frames represent the steps taken over each time interval.then compute the mean for each time interval.We will thus plot the data as a time-series plot (of `type="l"`).  after that we will locate where in the time-series plot the maximum is located and will draw a red vertical line to denote this location:
 
+```{r cache=TRUE, fig.width=10, fig.height=7}
+# x-axis has an interval 5, 10, 15, ...
+# y-axis - Average number of steps taken across all days
+
+# Splitting data across interval
+intervalSplit <- split(dat$steps, dat$interval)
+
+# amount of steps per time interval
+averageStepsPerInterval <- sapply(intervalSplit, mean, na.rm=TRUE)
+
+# time-series graph
+plot(uniqueIntervals, averageStepsPerInterval, type="l",
+     main="Average number of steps per interval across all days", 
+     xlab="Interval", ylab="Average # of steps across all days", 
+     lwd=2, col="blue")
+
+# location of where the maximum 
+maxIntervalDays <- max(averageStepsPerInterval, na.rm=TRUE)
+maxIndex <- as.numeric(which(averageStepsPerInterval == maxIntervalDays))
+
+# vertical line where the max
+maxInterval <- uniqueIntervals[maxIndex]
+abline(v=maxInterval, col="red", lwd=3)
+```
+
+With reference to the above plot, the interval that records the maximum number of steps averaged across all days is:
+
+```{r cache=TRUE}
+maxInterval
+```
 
 ## Imputing missing values
 
+calculate the total number of missing values
 
+```{r cache=TRUE}
+# Use complete.cases
+completeRowsBool <- complete.cases(dat$steps)
+numNA <- sum(as.numeric(!completeRowsBool))
+numNA
+```
+
+replacing all 'NA' values with mean o fthet particular 5 minute interval
+
+```{r cache=TRUE}
+# changing the meanStepsPerDay vector that contains the mean steps
+# First remove NaN values and replace with 0.
+# NaN values are produced when the entire day was filled with NA values
+# Essentially the mean and median would be zero anyway!
+meanStepsPerDay[is.nan(meanStepsPerDay)] <- 0
+
+# Now create a replicated vector 288 times
+meanColumn <- rep(meanStepsPerDay, 288)
+
+# The just before placement are
+rawSteps <- dat$steps
+
+# identify NA values
+stepsNA <- is.na(rawSteps)
+
+#replacing values with corresponding mean
+rawSteps[stepsNA] <- meanColumn[stepsNA]
+
+# saving them in new data frame
+datNew <- dat
+datNew$steps <- rawSteps
+```
+
+plotting a histogram of the new data
+
+```{r cache=TRUE, fig.width=11, fig.height=12}
+# split steps by dat
+stepsSplitNew <- split(datNew$steps, dates$yday)
+
+
+totalStepsPerDayNew <- sapply(stepsSplitNew, sum)
+
+# x-axis denotes the day
+# y-axis denotes the total number of steps 
+par(mfcol=c(2,1))
+# original histogram first
+plot(uniqueDates, totalStepsPerDay, main="Histogram of steps taken each day before imputing", 
+     xlab="Date (October to November 2012)", ylab="Frequency", type="h", lwd=4, col="blue")
+# modified histogram
+plot(uniqueDates, totalStepsPerDayNew, main="Histogram of steps taken each day after imputing", 
+     xlab="Date (October to November 2012)", ylab="Frequency", type="h", lwd=4, col="blue")
+```
+
+calculate the mean over all days.we will place the data before imputing, as well as the new one in the same data frame.
+
+```{r cache=TRUE}
+meanStepsPerDayNew <- sapply(stepsSplitNew, mean)
+meanDataFrameNew <- data.frame(date=uniqueDates, meanStepsPerDay=meanStepsPerDay, 
+                               meanStepsPerDayNew=meanStepsPerDayNew, row.names=NULL)
+meanDataFrameNew
+```
+
+the median steps per day are:
+```{r cache=TRUE}
+medianStepsPerDayNew <- sapply(stepsSplitNew, median)
+medianDataFrameNew <- data.frame(date=uniqueDates, medianStepsPerDay=medianStepsPerDay, 
+                                 medianStepsPerDayNew=medianStepsPerDayNew, row.names=NULL)
+medianDataFrameNew
+```
+
+By above data frames, the only values that have changed are those days where all of the observations were missing .The rest of the observations have stayed the same.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+we are going to split up the data into two data frames - 
+1.one data frame consists of all steps taken on a weekday.
+2.data frame consists of all steps taken on a weekend.
+
+```{r cache=TRUE}
+# wday is an integer from 0 to 6
+wdays <- dates$wday
+
+# First, create a numeric vector with 2 levels - 1 is for a weekday, 2 for a weekend
+classifywday <- rep(0, 17568) # 17568 observations overall
+
+# represents numerical value of day
+classifywday[wdays >= 1 & wdays <= 5] <- 1
+
+# saturday and sunday as 2
+classifywday[wdays == 6 | wdays == 0] <- 2
+
+daysFactor <- factor(classifywday, levels=c(1,2), labels=c("Weekdays", "Weekends"))
+
+# new column vector
+datNew$typeOfDay <- daysFactor
+
+# splitting into two data frames
+datWeekdays <- datNew[datNew$typeOfDay == "Weekdays", ]
+datWeekends <- datNew[datNew$typeOfDay == "Weekends", ]
+```
+
+split up the data for each data frame so that we will have two sets of individual data frames. 
+One set is for weekdays and within this data frame are individual data frames.Once we have these two sets of data frames, we will now calculate the mean amount of steps for each interval for the weekdays data frame and weekends data frame.
+
+```{r cache=TRUE, fig.width=11, fig.height=12}
+#splitting  up the Weekdays and Weekends
+datSplitWeekdays <- split(datWeekdays$steps, datWeekdays$interval)
+datSplitWeekends <- split(datWeekends$steps, datWeekends$interval)
+
+# Find the average
+meanStepsPerWeekdayInterval <- sapply(datSplitWeekdays, mean)
+meanStepsPerWeekendInterval <- sapply(datSplitWeekends, mean)
+
+par(mfcol=c(2,1))
+plot(uniqueIntervals, meanStepsPerWeekdayInterval, type="l",
+     main="Average number of steps per interval across all weekdays", 
+     xlab="Interval", ylab="Average # of steps across all weekdays", 
+     lwd=2, col="blue")
+plot(uniqueIntervals, meanStepsPerWeekendInterval, type="l",
+     main="Average number of steps per interval across all weekends", 
+     xlab="Interval", ylab="Average # of steps across all weekends", 
+     lwd=2, col="blue")
+```
+
+What is interesting about this plot is that it very much sums up the activity that any normal person would undergo depending on whether it is a weekday or weekend.
+
+There is a huge jump at roughly `830` for the weekdays.
+
+On the weekdays, this could be reflected with the subject being at work and there is not much movement.
