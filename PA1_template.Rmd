@@ -55,7 +55,7 @@ uniqueIntervals <- unique(dat$interval)
 
 As for `uniqueDates` and `uniqueIntervals`, these are variables that store a list of all possible dates and intervals.
 
-## What is the mean total number of steps taken per day?
+## 1.What is the mean total number of steps taken per day?
 
 plotting a histogram of the total number of steps taken for each day. 
 steps for plotting histogram
@@ -79,7 +79,7 @@ plot(uniqueDates, totalStepsPerDay, main="Histogram of steps taken each day",
      xlab="Date (October to November 2012)", ylab="Frequency", type="h", lwd=4, col="blue")
 ```
 
-The mean steps per each day are:
+1.2 The mean steps per each day are:
 
 ```{r cache=TRUE}
 meanStepsPerDay <- sapply(stepsSplit, mean, na.rm=TRUE)
@@ -87,7 +87,7 @@ meanDataFrame <- data.frame(date=uniqueDates, meanStepsPerDay=meanStepsPerDay, r
 meanDataFrame
 ```
 
-The median steps per each day are:
+1.3 The median steps per each day are:
 ```{r cache=TRUE}
 medianStepsPerDay <- sapply(stepsSplit, median, na.rm=TRUE)
 medianDataFrame <- data.frame(date=uniqueDates, medianStepsPerDay=medianStepsPerDay, row.names=NULL)
@@ -95,7 +95,7 @@ medianDataFrame
 ```
 
 
-## What is the average daily activity pattern?
+##2. What is the average daily activity pattern?
 
 first we have to split up this data again so that individual data frames represent the steps taken over each time interval.then compute the mean for each time interval.We will thus plot the data as a time-series plot (of `type="l"`).  after that we will locate where in the time-series plot the maximum is located and will draw a red vertical line to denote this location:
 
